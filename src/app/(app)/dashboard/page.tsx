@@ -6,7 +6,7 @@ import { getDictionary } from "@/lib/get-dictionary";
 import type { PlayStatus } from "@/types";
 
 export const metadata: Metadata = {
-  title: "Dashboard - Template",
+  title: "Dashboard - GameTracker",
   description: "Your dashboard",
 };
 

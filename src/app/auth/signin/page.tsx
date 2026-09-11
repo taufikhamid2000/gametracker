@@ -6,7 +6,7 @@ import { createServerClient } from "@/utils/supabase/server";
 import { getDictionary } from "@/lib/get-dictionary";
 
 export const metadata: Metadata = {
-  title: "Sign In - Template",
+  title: "Sign In - GameTracker",
   description: "Sign in to your account",
 };
 

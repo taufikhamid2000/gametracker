@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens — see DESIGN.md at the repo root for the full system.
+ * Values below mirror DuitDuit's (the reference implementation); swap
+ * hues per-project, keep the roles.
+ */
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --muted: #f1f5f9;
+  --border: rgba(15, 23, 42, 0.08);
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --secondary: #a78bfa;
+  --accent: #65a30d;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --ring: #7c3aed;
+
+  /* Header/sidebar chrome — defaults to the page tokens above ("Default"
+   * accent preset), overridden per-preset below via :root[data-accent="..."]
+   * (or inline on <html> for "custom", since that one's colors are runtime
+   * user input, not a fixed CSS block). Kept separate from
+   * --background/--foreground so a colored preset doesn't also recolor
+   * page content.
+   *
+   * Only --nav-bg/--nav-fg are ever set directly — everything else derives
+   * from --nav-fg so a preset (or custom picker) only has to pick two
+   * colors and the muted/border/hover states stay proportionally correct
+   * automatically, the same way text-foreground/70 etc. work elsewhere. */
+  --nav-bg: var(--background);
+  --nav-fg: var(--foreground);
+  --nav-fg-muted: color-mix(in srgb, var(--nav-fg) 65%, transparent);
+  --nav-border: color-mix(in srgb, var(--nav-fg) 14%, transparent);
+  --nav-active-bg: color-mix(in srgb, var(--nav-fg) 16%, transparent);
+  --nav-hover-bg: color-mix(in srgb, var(--nav-fg) 8%, transparent);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --background: #0f172a;
+    --foreground: #ffffff;
+    --muted: #101a34;
+    --border: rgba(255, 255, 255, 0.08);
+    --primary: #7c3aed;
+    --primary-foreground: #ffffff;
+    --secondary: #a78bfa;
+    --accent: #65a30d;
+    --accent-foreground: #ffffff;
+    --destructive: #dc2626;
+    --destructive-foreground: #ffffff;
+    --ring: #a78bfa;
+  }
+}
+
+/* Explicit overrides (set via /settings) win over the OS preference above. */
+:root[data-theme="dark"] {
+  --background: #0f172a;
+  --foreground: #ffffff;
+  --muted: #101a34;
+  --border: rgba(255, 255, 255, 0.08);
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --secondary: #a78bfa;
+  --accent: #65a30d;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --ring: #a78bfa;
+}
+
+:root[data-theme="light"] {
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --muted: #f1f5f9;
+  --border: rgba(15, 23, 42, 0.08);
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --secondary: #a78bfa;
+  --accent: #65a30d;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --ring: #7c3aed;
+}
+
+/* Accent presets — header/sidebar/footer chrome only. Fixed colors on
+ * purpose (not theme-aware): each swatch already carries its own white
+ * foreground, so it reads fine whether the page itself is light or dark.
+ * --nav-fg-muted/border/active-bg/hover-bg derive from --nav-fg at :root
+ * above, so only the two base colors need setting here. */
+:root[data-accent="ocean"] {
+  --nav-bg: #0b2e59;
+  --nav-fg: #ffffff;
+}
+
+:root[data-accent="forest"] {
+  --nav-bg: #0b3d2e;
+  --nav-fg: #ffffff;
+}
+
+:root[data-accent="plum"] {
+  --nav-bg: #3b0b59;
+  --nav-fg: #ffffff;
+}
+
+:root[data-accent="slate"] {
+  --nav-bg: #1e293b;
+  --nav-fg: #ffffff;
+}
+
+/* "custom" has no fixed block — its --nav-bg/--nav-fg are set inline on
+ * <html> in layout.tsx from the accent_custom_bg/fg cookies, since those
+ * are runtime user input rather than a value known at build time. */
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Motion — transform/opacity only, respects prefers-reduced-motion. */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-page-in {
+  animation: fade-in-up 350ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

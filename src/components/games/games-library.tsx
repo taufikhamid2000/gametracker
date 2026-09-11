@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
 import { GameForm } from "@/components/games/game-form";
 import { Spinner } from "@/components/spinner";
@@ -33,11 +33,94 @@ function formatPlaytime(minutes: number): string {
   return `${hours}h ${mins}m`;
 }
 
+type SortColumn = "title" | "store" | "play_status" | "install_status" | "playtime_minutes" | "deck_compat" | "rating";
+type SortDirection = "asc" | "desc";
+
+// Sorts by the localized label the user actually sees for the enum columns
+// (store/play_status/install_status/deck_compat), not the raw db value —
+// so switching to ms doesn't leave sort order tied to English text.
+function sortGames(games: Game[], column: SortColumn, direction: SortDirection, dict: Dictionary["games"]): Game[] {
+  const sortKey = (game: Game): string | number => {
+    switch (column) {
+      case "title":
+        return game.title.toLowerCase();
+      case "store":
+        return dict.store[game.store];
+      case "play_status":
+        return dict.playStatus[game.play_status];
+      case "install_status":
+        return dict.installStatus[game.install_status];
+      case "deck_compat":
+        return dict.deckCompat[game.deck_compat];
+      case "playtime_minutes":
+        return game.playtime_minutes;
+      case "rating":
+        // Unrated games sort to the end regardless of direction, rather
+        // than clumping at whichever end 0/null happens to land on.
+        return game.rating ?? (direction === "asc" ? Infinity : -Infinity);
+    }
+  };
+
+  const sorted = [...games].sort((a, b) => {
+    const ka = sortKey(a);
+    const kb = sortKey(b);
+    if (typeof ka === "number" && typeof kb === "number") return ka - kb;
+    return String(ka).localeCompare(String(kb));
+  });
+
+  return direction === "asc" ? sorted : sorted.reverse();
+}
+
+function SortableHeader({
+  column,
+  sort,
+  onSort,
+  children,
+}: {
+  column: SortColumn;
+  sort: { column: SortColumn; direction: SortDirection } | null;
+  onSort: (column: SortColumn) => void;
+  children: React.ReactNode;
+}) {
+  const active = sort?.column === column;
+  return (
+    <th
+      className="px-4 py-3 font-medium"
+      aria-sort={active ? (sort!.direction === "asc" ? "ascending" : "descending") : "none"}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className="inline-flex cursor-pointer items-center gap-1 py-1 -my-1 text-left transition-colors hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      >
+        {children}
+        <span className={`text-[10px] ${active ? "text-foreground" : "text-foreground/30"}`} aria-hidden="true">
+          {active ? (sort!.direction === "asc" ? "▲" : "▼") : "▲▼"}
+        </span>
+      </button>
+    </th>
+  );
+}
+
 export function GamesLibrary({ games, dict }: { games: Game[]; dict: Dictionary["games"] }) {
   const [addOpen, setAddOpen] = useState(false);
   const [editingGame, setEditingGame] = useState<Game | null>(null);
   const [deletingId, startDeleteTransition] = useTransition();
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [sort, setSort] = useState<{ column: SortColumn; direction: SortDirection } | null>(null);
+
+  const sortedGames = useMemo(
+    () => (sort ? sortGames(games, sort.column, sort.direction, dict) : games),
+    [games, sort, dict]
+  );
+
+  const toggleSort = (column: SortColumn) => {
+    setSort((current) => {
+      if (!current || current.column !== column) return { column, direction: "asc" };
+      if (current.direction === "asc") return { column, direction: "desc" };
+      return null; // third click on the same column clears back to insertion order
+    });
+  };
 
   const handleAdd = async (values: GameFormValues) => {
     const result = await addGame(toFormData(values));
@@ -93,18 +176,32 @@ export function GamesLibrary({ games, dict }: { games: Game[]; dict: Dictionary[
           <table className="w-full text-left text-sm">
             <thead className="bg-muted/40 text-foreground/60">
               <tr>
-                <th className="px-4 py-3 font-medium">{dict.table.title}</th>
-                <th className="px-4 py-3 font-medium">{dict.table.store}</th>
-                <th className="px-4 py-3 font-medium">{dict.table.playStatus}</th>
-                <th className="px-4 py-3 font-medium">{dict.table.installStatus}</th>
-                <th className="px-4 py-3 font-medium">{dict.table.playtime}</th>
-                <th className="px-4 py-3 font-medium">{dict.table.deckCompat}</th>
-                <th className="px-4 py-3 font-medium">{dict.table.rating}</th>
+                <SortableHeader column="title" sort={sort} onSort={toggleSort}>
+                  {dict.table.title}
+                </SortableHeader>
+                <SortableHeader column="store" sort={sort} onSort={toggleSort}>
+                  {dict.table.store}
+                </SortableHeader>
+                <SortableHeader column="play_status" sort={sort} onSort={toggleSort}>
+                  {dict.table.playStatus}
+                </SortableHeader>
+                <SortableHeader column="install_status" sort={sort} onSort={toggleSort}>
+                  {dict.table.installStatus}
+                </SortableHeader>
+                <SortableHeader column="playtime_minutes" sort={sort} onSort={toggleSort}>
+                  {dict.table.playtime}
+                </SortableHeader>
+                <SortableHeader column="deck_compat" sort={sort} onSort={toggleSort}>
+                  {dict.table.deckCompat}
+                </SortableHeader>
+                <SortableHeader column="rating" sort={sort} onSort={toggleSort}>
+                  {dict.table.rating}
+                </SortableHeader>
                 <th className="px-4 py-3 font-medium text-right">{dict.table.actions}</th>
               </tr>
             </thead>
             <tbody>
-              {games.map((game) => (
+              {sortedGames.map((game) => (
                 <tr key={game.id} className="animate-row-in border-t border-border">
                   <td className="px-4 py-3 font-medium text-foreground">{game.title}</td>
                   <td className="px-4 py-3 text-foreground/70">{dict.store[game.store]}</td>

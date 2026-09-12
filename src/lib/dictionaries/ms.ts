@@ -99,6 +99,10 @@ export const ms: Dictionary = {
     expand: "Tunjuk DLC dan kosmetik",
     collapse: "Sembunyi DLC dan kosmetik",
     notOwned: "Tidak dimiliki",
+    columns: {
+      button: "Lajur",
+      title: "Sesuaikan lajur",
+    },
     table: {
       title: "Tajuk",
       store: "Platform",

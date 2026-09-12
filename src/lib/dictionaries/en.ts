@@ -99,6 +99,10 @@ export const en = {
     expand: "Show DLC and cosmetics",
     collapse: "Hide DLC and cosmetics",
     notOwned: "Not owned",
+    columns: {
+      button: "Columns",
+      title: "Customize columns",
+    },
     table: {
       title: "Title",
       store: "Store",

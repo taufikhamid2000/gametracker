@@ -19,6 +19,8 @@ function toRow(raw: Record<string, unknown>): GameInsert {
     deck_compat: parsed.deck_compat,
     rating: parsed.rating === "" || parsed.rating === undefined ? null : parsed.rating,
     notes: parsed.notes || null,
+    price_amount: parsed.price_amount === "" || parsed.price_amount === undefined ? null : parsed.price_amount,
+    price_currency: parsed.price_currency || null,
   };
 }
 

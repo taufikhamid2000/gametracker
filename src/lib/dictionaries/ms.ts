@@ -113,6 +113,7 @@ export const ms: Dictionary = {
       deckCompat: "Deck",
       rating: "Penilaian",
       downloadSize: "Saiz muat turun",
+      price: "Harga",
       actions: "Tindakan",
     },
     downloadSizeSource: {
@@ -164,6 +165,10 @@ export const ms: Dictionary = {
       deckCompatLabel: "Keserasian Steam Deck",
       ratingLabel: "Penilaian anda (1–10)",
       ratingPlaceholder: "Pilihan",
+      priceAmountLabel: "Harga dibayar",
+      priceAmountPlaceholder: "Pilihan",
+      priceCurrencyLabel: "Mata wang",
+      priceCurrencyPlaceholder: "cth. MYR",
       notesLabel: "Nota",
       notesPlaceholder: "Pilihan",
       save: "Simpan permainan",

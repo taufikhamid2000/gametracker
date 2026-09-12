@@ -16,6 +16,8 @@ export const gameFormSchema = z.object({
   deck_compat: z.enum(DECK_COMPAT_RATINGS),
   rating: z.coerce.number().int().min(1).max(10).optional().or(z.literal("")),
   notes: z.string().trim().optional().or(z.literal("")),
+  price_amount: z.coerce.number().min(0).optional().or(z.literal("")),
+  price_currency: z.string().trim().optional().or(z.literal("")),
 });
 
 export type GameFormValues = z.infer<typeof gameFormSchema>;
@@ -32,4 +34,6 @@ export const gameFormDefaults: GameFormValues = {
   deck_compat: "unknown",
   rating: "",
   notes: "",
+  price_amount: "",
+  price_currency: "",
 };

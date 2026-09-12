@@ -26,6 +26,8 @@ function toDefaults(game?: Game | null): GameFormValues {
     deck_compat: game.deck_compat,
     rating: game.rating ?? "",
     notes: game.notes ?? "",
+    price_amount: game.price_amount ?? "",
+    price_currency: game.price_currency ?? "",
   };
 }
 
@@ -198,6 +200,37 @@ export function GameForm({
             max={10}
             placeholder={dict.form.ratingPlaceholder}
             {...register("rating")}
+            disabled={isSubmitting}
+            className={FIELD_CLASS}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label className={LABEL_CLASS} htmlFor="price_amount">
+            {dict.form.priceAmountLabel}
+          </label>
+          <input
+            id="price_amount"
+            type="number"
+            min={0}
+            step="0.01"
+            placeholder={dict.form.priceAmountPlaceholder}
+            {...register("price_amount")}
+            disabled={isSubmitting}
+            className={FIELD_CLASS}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className={LABEL_CLASS} htmlFor="price_currency">
+            {dict.form.priceCurrencyLabel}
+          </label>
+          <input
+            id="price_currency"
+            {...register("price_currency")}
+            placeholder={dict.form.priceCurrencyPlaceholder}
             disabled={isSubmitting}
             className={FIELD_CLASS}
           />

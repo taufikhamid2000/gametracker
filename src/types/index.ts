@@ -36,6 +36,8 @@ export interface Game {
   deck_compat: DeckCompat;
   rating: number | null;
   notes: string | null;
+  price_amount: number | null;
+  price_currency: string | null;
   steam_appid: number | null;
   download_size_bytes: number | null;
   download_size_source: DownloadSizeSource;

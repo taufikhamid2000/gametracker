@@ -41,6 +41,12 @@ function formatDownloadSize(bytes: number | null): string {
   return `${mb.toFixed(0)} MB`;
 }
 
+function formatPrice(amount: number | null, currency: string | null): string {
+  if (amount === null) return "—";
+  if (amount === 0) return "Free";
+  return `${currency ?? ""} ${amount.toFixed(2)}`.trim();
+}
+
 type SortColumn =
   | "title"
   | "store"
@@ -49,20 +55,28 @@ type SortColumn =
   | "playtime_minutes"
   | "deck_compat"
   | "rating"
-  | "download_size_bytes";
+  | "download_size_bytes"
+  | "price_amount";
 type SortDirection = "asc" | "desc";
 
 // Title, actions, and (for now) store are always shown — everything else can
-// be hidden per-viewer. Status/Installed/Playtime/Deck/Rating start hidden
-// since most people care about store and size first and the rest is clutter
-// until they ask for it.
-type ToggleableColumn = "play_status" | "install_status" | "playtime_minutes" | "deck_compat" | "rating";
+// be hidden per-viewer. Status/Installed/Playtime/Deck/Rating/Price start
+// hidden since most people care about store and size first and the rest is
+// clutter until they ask for it.
+type ToggleableColumn =
+  | "play_status"
+  | "install_status"
+  | "playtime_minutes"
+  | "deck_compat"
+  | "rating"
+  | "price_amount";
 const TOGGLEABLE_COLUMNS: ToggleableColumn[] = [
   "play_status",
   "install_status",
   "playtime_minutes",
   "deck_compat",
   "rating",
+  "price_amount",
 ];
 const DEFAULT_VISIBLE_COLUMNS: Record<ToggleableColumn, boolean> = {
   play_status: false,
@@ -70,6 +84,7 @@ const DEFAULT_VISIBLE_COLUMNS: Record<ToggleableColumn, boolean> = {
   playtime_minutes: false,
   deck_compat: false,
   rating: false,
+  price_amount: false,
 };
 const VISIBLE_COLUMNS_STORAGE_KEY = "gametracker:visibleColumns";
 const COLUMN_LABEL_KEY: Record<ToggleableColumn, keyof Dictionary["games"]["table"]> = {
@@ -78,6 +93,7 @@ const COLUMN_LABEL_KEY: Record<ToggleableColumn, keyof Dictionary["games"]["tabl
   playtime_minutes: "playtime",
   deck_compat: "deckCompat",
   rating: "rating",
+  price_amount: "price",
 };
 
 function loadVisibleColumns(): Record<ToggleableColumn, boolean> {
@@ -118,6 +134,8 @@ function sortGames(games: Game[], column: SortColumn, direction: SortDirection, 
         // Unrated games sort to the end regardless of direction, rather
         // than clumping at whichever end 0/null happens to land on.
         return game.rating ?? (direction === "asc" ? Infinity : -Infinity);
+      case "price_amount":
+        return game.price_amount ?? (direction === "asc" ? Infinity : -Infinity);
     }
   };
 
@@ -230,6 +248,11 @@ function GameRow({
         <td className="px-4 py-3 text-foreground/70">{dict.deckCompat[game.deck_compat]}</td>
       )}
       {visibleColumns.rating && <td className="px-4 py-3 font-mono text-foreground/70">{game.rating ?? "—"}</td>}
+      {visibleColumns.price_amount && (
+        <td className="px-4 py-3 font-mono text-foreground/70">
+          {formatPrice(game.price_amount, game.price_currency)}
+        </td>
+      )}
       <td className="px-4 py-3 font-mono text-foreground/70">
         {formatDownloadSize(game.download_size_bytes)}
         {game.download_size_bytes !== null && game.download_size_source === "steam_crossmatch" && (
@@ -435,6 +458,11 @@ export function GamesLibrary({ games, dict }: { games: Game[]; dict: Dictionary[
                 {visibleColumns.rating && (
                   <SortableHeader column="rating" sort={sort} onSort={toggleSort}>
                     {dict.table.rating}
+                  </SortableHeader>
+                )}
+                {visibleColumns.price_amount && (
+                  <SortableHeader column="price_amount" sort={sort} onSort={toggleSort}>
+                    {dict.table.price}
                   </SortableHeader>
                 )}
                 <SortableHeader column="download_size_bytes" sort={sort} onSort={toggleSort}>

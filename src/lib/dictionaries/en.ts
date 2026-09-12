@@ -113,6 +113,7 @@ export const en = {
       deckCompat: "Deck",
       rating: "Rating",
       downloadSize: "Download size",
+      price: "Price",
       actions: "Actions",
     },
     downloadSizeSource: {
@@ -164,6 +165,10 @@ export const en = {
       deckCompatLabel: "Steam Deck compatibility",
       ratingLabel: "Your rating (1–10)",
       ratingPlaceholder: "Optional",
+      priceAmountLabel: "Price paid",
+      priceAmountPlaceholder: "Optional",
+      priceCurrencyLabel: "Currency",
+      priceCurrencyPlaceholder: "e.g. MYR",
       notesLabel: "Notes",
       notesPlaceholder: "Optional",
       save: "Save game",

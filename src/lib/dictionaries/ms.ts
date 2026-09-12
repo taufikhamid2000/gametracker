@@ -105,7 +105,15 @@ export const ms: Dictionary = {
       lastPlayed: "Terakhir dimainkan",
       deckCompat: "Deck",
       rating: "Penilaian",
+      downloadSize: "Saiz muat turun",
       actions: "Tindakan",
+    },
+    downloadSizeSource: {
+      steam_owned: "Daripada salinan Steam anda",
+      steam_crossmatch: "Anggaran daripada Steam",
+      epic_manifest: "Daripada manifest Epic",
+      manual: "Dimasukkan secara manual",
+      unknown: "Tidak diketahui",
     },
     store: {
       steam: "Steam",

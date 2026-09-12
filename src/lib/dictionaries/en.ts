@@ -105,7 +105,15 @@ export const en = {
       lastPlayed: "Last played",
       deckCompat: "Deck",
       rating: "Rating",
+      downloadSize: "Download size",
       actions: "Actions",
+    },
+    downloadSizeSource: {
+      steam_owned: "From your Steam copy",
+      steam_crossmatch: "Estimated from Steam",
+      epic_manifest: "From Epic manifest",
+      manual: "Manually entered",
+      unknown: "Unknown",
     },
     store: {
       steam: "Steam",

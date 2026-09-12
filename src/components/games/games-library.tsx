@@ -33,7 +33,23 @@ function formatPlaytime(minutes: number): string {
   return `${hours}h ${mins}m`;
 }
 
-type SortColumn = "title" | "store" | "play_status" | "install_status" | "playtime_minutes" | "deck_compat" | "rating";
+function formatDownloadSize(bytes: number | null): string {
+  if (bytes === null || bytes === 0) return "—";
+  const gb = bytes / 1024 ** 3;
+  if (gb >= 1) return `${gb.toFixed(1)} GB`;
+  const mb = bytes / 1024 ** 2;
+  return `${mb.toFixed(0)} MB`;
+}
+
+type SortColumn =
+  | "title"
+  | "store"
+  | "play_status"
+  | "install_status"
+  | "playtime_minutes"
+  | "deck_compat"
+  | "rating"
+  | "download_size_bytes";
 type SortDirection = "asc" | "desc";
 
 // Sorts by the localized label the user actually sees for the enum columns
@@ -54,6 +70,10 @@ function sortGames(games: Game[], column: SortColumn, direction: SortDirection, 
         return dict.deckCompat[game.deck_compat];
       case "playtime_minutes":
         return game.playtime_minutes;
+      case "download_size_bytes":
+        // Unmeasured sizes sort to the end regardless of direction, same
+        // treatment as unrated games below.
+        return game.download_size_bytes ?? (direction === "asc" ? Infinity : -Infinity);
       case "rating":
         // Unrated games sort to the end regardless of direction, rather
         // than clumping at whichever end 0/null happens to land on.
@@ -199,6 +219,9 @@ export function GamesLibrary({ games, dict }: { games: Game[]; dict: Dictionary[
                 <SortableHeader column="rating" sort={sort} onSort={toggleSort}>
                   {dict.table.rating}
                 </SortableHeader>
+                <SortableHeader column="download_size_bytes" sort={sort} onSort={toggleSort}>
+                  {dict.table.downloadSize}
+                </SortableHeader>
                 <th className="px-4 py-3 font-medium text-right">{dict.table.actions}</th>
               </tr>
             </thead>
@@ -218,6 +241,17 @@ export function GamesLibrary({ games, dict }: { games: Game[]; dict: Dictionary[
                   <td className="px-4 py-3 font-mono text-foreground/70">{formatPlaytime(game.playtime_minutes)}</td>
                   <td className="px-4 py-3 text-foreground/70">{dict.deckCompat[game.deck_compat]}</td>
                   <td className="px-4 py-3 font-mono text-foreground/70">{game.rating ?? "—"}</td>
+                  <td className="px-4 py-3 font-mono text-foreground/70">
+                    {formatDownloadSize(game.download_size_bytes)}
+                    {game.download_size_bytes !== null && game.download_size_source === "steam_crossmatch" && (
+                      <span
+                        className="ml-1.5 cursor-help text-[10px] font-sans text-foreground/40"
+                        title={dict.downloadSizeSource.steam_crossmatch}
+                      >
+                        ~
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <button
                       type="button"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { Fragment, useMemo, useState, useTransition } from "react";
 import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
 import { GameForm } from "@/components/games/game-form";
 import { Spinner } from "@/components/spinner";
@@ -122,17 +122,127 @@ function SortableHeader({
   );
 }
 
+function GameRow({
+  game,
+  dict,
+  indented,
+  hasChildren,
+  isExpanded,
+  onToggleExpanded,
+  onEdit,
+  onDelete,
+  deleting,
+}: {
+  game: Game;
+  dict: Dictionary["games"];
+  indented: boolean;
+  hasChildren: boolean;
+  isExpanded: boolean;
+  onToggleExpanded: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  deleting: boolean;
+}) {
+  return (
+    <tr className="animate-row-in border-t border-border">
+      <td className="px-4 py-3 font-medium text-foreground">
+        <div className={`flex items-center gap-1.5 ${indented ? "pl-6" : ""}`}>
+          {hasChildren ? (
+            <button
+              type="button"
+              onClick={onToggleExpanded}
+              aria-expanded={isExpanded}
+              aria-label={isExpanded ? dict.collapse : dict.expand}
+              className="cursor-pointer rounded p-0.5 text-foreground/40 transition-colors hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            >
+              <span className="inline-block w-3 text-[10px]" aria-hidden="true">
+                {isExpanded ? "▼" : "▶"}
+              </span>
+            </button>
+          ) : (
+            !indented && <span className="inline-block w-3" aria-hidden="true" />
+          )}
+          <span>{game.title}</span>
+          {!game.owned && (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-foreground/50">
+              {dict.notOwned}
+            </span>
+          )}
+        </div>
+      </td>
+      <td className="px-4 py-3 text-foreground/70">{dict.store[game.store]}</td>
+      <td className="px-4 py-3">
+        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${PLAY_STATUS_BADGE[game.play_status]}`}>
+          {dict.playStatus[game.play_status]}
+        </span>
+      </td>
+      <td className="px-4 py-3 text-foreground/70">{dict.installStatus[game.install_status]}</td>
+      <td className="px-4 py-3 font-mono text-foreground/70">{formatPlaytime(game.playtime_minutes)}</td>
+      <td className="px-4 py-3 text-foreground/70">{dict.deckCompat[game.deck_compat]}</td>
+      <td className="px-4 py-3 font-mono text-foreground/70">{game.rating ?? "—"}</td>
+      <td className="px-4 py-3 font-mono text-foreground/70">
+        {formatDownloadSize(game.download_size_bytes)}
+        {game.download_size_bytes !== null && game.download_size_source === "steam_crossmatch" && (
+          <span
+            className="ml-1.5 cursor-help text-[10px] font-sans text-foreground/40"
+            title={dict.downloadSizeSource.steam_crossmatch}
+          >
+            ~
+          </span>
+        )}
+      </td>
+      <td className="px-4 py-3 text-right">
+        <button
+          type="button"
+          onClick={onEdit}
+          className="cursor-pointer py-2 -my-2 pl-2 text-sm text-foreground/70 underline-offset-4 hover:text-foreground hover:underline"
+        >
+          {dict.edit}
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={deleting}
+          className="cursor-pointer py-2 -my-2 pl-3 text-sm text-destructive underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {deleting ? <Spinner className="inline h-3.5 w-3.5" /> : dict.delete}
+        </button>
+      </td>
+    </tr>
+  );
+}
+
 export function GamesLibrary({ games, dict }: { games: Game[]; dict: Dictionary["games"] }) {
   const [addOpen, setAddOpen] = useState(false);
   const [editingGame, setEditingGame] = useState<Game | null>(null);
   const [deletingId, startDeleteTransition] = useTransition();
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [sort, setSort] = useState<{ column: SortColumn; direction: SortDirection } | null>(null);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const sortedGames = useMemo(
     () => (sort ? sortGames(games, sort.column, sort.direction, dict) : games),
     [games, sort, dict]
   );
+
+  // Children (DLC/cosmetics) are looked up from the full unsorted list, keyed
+  // by parent id, then rendered in whatever order sortedGames already put
+  // them in — so sorting a column still orders child rows sensibly relative
+  // to each other, they just don't compete with top-level rows for position.
+  const childrenByParent = useMemo(() => {
+    const map = new Map<string, Game[]>();
+    for (const game of sortedGames) {
+      if (!game.parent_id) continue;
+      const siblings = map.get(game.parent_id) ?? [];
+      siblings.push(game);
+      map.set(game.parent_id, siblings);
+    }
+    return map;
+  }, [sortedGames]);
+
+  const topLevelGames = useMemo(() => sortedGames.filter((game) => !game.parent_id), [sortedGames]);
+
+  const toggleExpanded = (id: string) => setExpanded((current) => ({ ...current, [id]: !current[id] }));
 
   const toggleSort = (column: SortColumn) => {
     setSort((current) => {
@@ -226,51 +336,40 @@ export function GamesLibrary({ games, dict }: { games: Game[]; dict: Dictionary[
               </tr>
             </thead>
             <tbody>
-              {sortedGames.map((game) => (
-                <tr key={game.id} className="animate-row-in border-t border-border">
-                  <td className="px-4 py-3 font-medium text-foreground">{game.title}</td>
-                  <td className="px-4 py-3 text-foreground/70">{dict.store[game.store]}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${PLAY_STATUS_BADGE[game.play_status]}`}
-                    >
-                      {dict.playStatus[game.play_status]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-foreground/70">{dict.installStatus[game.install_status]}</td>
-                  <td className="px-4 py-3 font-mono text-foreground/70">{formatPlaytime(game.playtime_minutes)}</td>
-                  <td className="px-4 py-3 text-foreground/70">{dict.deckCompat[game.deck_compat]}</td>
-                  <td className="px-4 py-3 font-mono text-foreground/70">{game.rating ?? "—"}</td>
-                  <td className="px-4 py-3 font-mono text-foreground/70">
-                    {formatDownloadSize(game.download_size_bytes)}
-                    {game.download_size_bytes !== null && game.download_size_source === "steam_crossmatch" && (
-                      <span
-                        className="ml-1.5 cursor-help text-[10px] font-sans text-foreground/40"
-                        title={dict.downloadSizeSource.steam_crossmatch}
-                      >
-                        ~
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      type="button"
-                      onClick={() => setEditingGame(game)}
-                      className="cursor-pointer py-2 -my-2 pl-2 text-sm text-foreground/70 underline-offset-4 hover:text-foreground hover:underline"
-                    >
-                      {dict.edit}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(game.id)}
-                      disabled={deletingId && pendingDeleteId === game.id}
-                      className="cursor-pointer py-2 -my-2 pl-3 text-sm text-destructive underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {pendingDeleteId === game.id ? <Spinner className="inline h-3.5 w-3.5" /> : dict.delete}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {topLevelGames.map((game) => {
+                const children = childrenByParent.get(game.id) ?? [];
+                const isExpanded = !!expanded[game.id];
+                return (
+                  <Fragment key={game.id}>
+                    <GameRow
+                      game={game}
+                      dict={dict}
+                      indented={false}
+                      hasChildren={children.length > 0}
+                      isExpanded={isExpanded}
+                      onToggleExpanded={() => toggleExpanded(game.id)}
+                      onEdit={() => setEditingGame(game)}
+                      onDelete={() => handleDelete(game.id)}
+                      deleting={deletingId !== null && pendingDeleteId === game.id}
+                    />
+                    {isExpanded &&
+                      children.map((child) => (
+                        <GameRow
+                          key={child.id}
+                          game={child}
+                          dict={dict}
+                          indented
+                          hasChildren={false}
+                          isExpanded={false}
+                          onToggleExpanded={() => {}}
+                          onEdit={() => setEditingGame(child)}
+                          onDelete={() => handleDelete(child.id)}
+                          deleting={deletingId !== null && pendingDeleteId === child.id}
+                        />
+                      ))}
+                  </Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>

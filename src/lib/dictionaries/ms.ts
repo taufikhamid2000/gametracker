@@ -96,6 +96,9 @@ export const ms: Dictionary = {
     delete: "Padam",
     empty: "Belum ada permainan — tambah yang pertama untuk mula menjejaki koleksi anda.",
     filterAll: "Semua",
+    expand: "Tunjuk DLC dan kosmetik",
+    collapse: "Sembunyi DLC dan kosmetik",
+    notOwned: "Tidak dimiliki",
     table: {
       title: "Tajuk",
       store: "Platform",

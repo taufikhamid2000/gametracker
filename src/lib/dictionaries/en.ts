@@ -96,6 +96,9 @@ export const en = {
     delete: "Delete",
     empty: "No games yet — add your first one to start tracking your library.",
     filterAll: "All",
+    expand: "Show DLC and cosmetics",
+    collapse: "Hide DLC and cosmetics",
+    notOwned: "Not owned",
     table: {
       title: "Title",
       store: "Store",

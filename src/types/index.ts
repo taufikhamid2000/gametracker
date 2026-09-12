@@ -10,6 +10,9 @@ export type PlayStatus = (typeof PLAY_STATUSES)[number];
 export const DECK_COMPAT_RATINGS = ["unknown", "verified", "playable", "unsupported"] as const;
 export type DeckCompat = (typeof DECK_COMPAT_RATINGS)[number];
 
+export const ITEM_TYPES = ["game", "dlc", "cosmetic"] as const;
+export type ItemType = (typeof ITEM_TYPES)[number];
+
 export const DOWNLOAD_SIZE_SOURCES = [
   "steam_owned",
   "steam_crossmatch",
@@ -37,6 +40,9 @@ export interface Game {
   download_size_bytes: number | null;
   download_size_source: DownloadSizeSource;
   download_size_updated_at: string | null;
+  parent_id: string | null;
+  item_type: ItemType;
+  owned: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -44,11 +50,17 @@ export interface Game {
 // Download-size fields are populated by a separate backend job (Steam catalog
 // matching), never through the add/edit game form — optional on insert so the
 // DB's own defaults ('unknown' / null) apply until that job fills them in.
-export type GameInsert = Omit<
-  Game,
-  "id" | "user_id" | "created_at" | "updated_at" | "steam_appid" | "download_size_bytes" | "download_size_source" | "download_size_updated_at"
-> &
-  Partial<Pick<Game, "steam_appid" | "download_size_bytes" | "download_size_source" | "download_size_updated_at">>;
+type BackendManagedFields =
+  | "steam_appid"
+  | "download_size_bytes"
+  | "download_size_source"
+  | "download_size_updated_at"
+  | "parent_id"
+  | "item_type"
+  | "owned";
+
+export type GameInsert = Omit<Game, "id" | "user_id" | "created_at" | "updated_at" | BackendManagedFields> &
+  Partial<Pick<Game, BackendManagedFields>>;
 export type GameUpdate = Partial<GameInsert>;
 
 export type Database = {
@@ -68,6 +80,7 @@ export type Database = {
       play_status: PlayStatus;
       deck_compat: DeckCompat;
       download_size_source: DownloadSizeSource;
+      item_type: ItemType;
     };
   };
 };

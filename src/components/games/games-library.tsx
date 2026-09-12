@@ -148,7 +148,9 @@ export function GamesLibrary({ games, dict }: { games: Game[]; dict: Dictionary[
     <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-6 py-12 animate-page-in">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">{dict.title}</h1>
+          <h1 className="text-xl font-semibold text-foreground">
+            {dict.title} <span className="text-foreground/50">({games.length})</span>
+          </h1>
           <p className="text-sm text-foreground/60">{dict.subtitle}</p>
         </div>
 

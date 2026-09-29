@@ -65,6 +65,34 @@ export type GameInsert = Omit<Game, "id" | "user_id" | "created_at" | "updated_a
   Partial<Pick<Game, BackendManagedFields>>;
 export type GameUpdate = Partial<GameInsert>;
 
+// A classified-but-unconfirmed game, staged by the atlas MCP tool
+// (gametracker_stage_game) so the owner can review/edit it in the normal
+// Add Game modal before it becomes a real `games` row. Everything but
+// title/id/user_id/created_at is optional since classification may not
+// find every field.
+export interface PendingGame {
+  id: string;
+  user_id: string;
+  title: string;
+  store: Store | null;
+  store_id: string | null;
+  install_status: InstallStatus | null;
+  install_path: string | null;
+  play_status: PlayStatus | null;
+  playtime_minutes: number | null;
+  last_played_at: string | null;
+  deck_compat: DeckCompat | null;
+  rating: number | null;
+  notes: string | null;
+  price_amount: number | null;
+  price_currency: string | null;
+  source_text: string | null;
+  created_at: string;
+}
+
+export type PendingGameInsert = Partial<Omit<PendingGame, "id" | "created_at">> &
+  Pick<PendingGame, "user_id" | "title">;
+
 export type Database = {
   gametracker: {
     Tables: {
@@ -72,6 +100,11 @@ export type Database = {
         Row: Game;
         Insert: Partial<Game> & Pick<Game, "title">;
         Update: GameUpdate;
+      };
+      pending_games: {
+        Row: PendingGame;
+        Insert: PendingGameInsert;
+        Update: Partial<PendingGameInsert>;
       };
     };
     Views: object;

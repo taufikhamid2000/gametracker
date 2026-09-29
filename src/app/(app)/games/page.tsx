@@ -24,5 +24,10 @@ export default async function GamesPage() {
     .select("*")
     .order("updated_at", { ascending: false });
 
-  return <GamesLibrary games={games ?? []} dict={dict.games} />;
+  const { data: pendingGames } = await supabase
+    .from("pending_games")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  return <GamesLibrary games={games ?? []} pendingGames={pendingGames ?? []} dict={dict.games} />;
 }

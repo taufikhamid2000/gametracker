@@ -179,6 +179,12 @@ export const en = {
       confirmDelete: "Delete this game from your library?",
       titleRequired: "Title is required",
       genericError: "Something went wrong — please try again",
+      draftNotice: "Classified from pasted text — check the fields below before saving.",
+    },
+    pending: {
+      banner: "{count} pasted game(s) waiting for review",
+      review: "Review",
+      dismiss: "Dismiss",
     },
   },
   settings: {

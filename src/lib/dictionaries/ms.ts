@@ -179,6 +179,12 @@ export const ms: Dictionary = {
       confirmDelete: "Padam permainan ini daripada koleksi anda?",
       titleRequired: "Tajuk diperlukan",
       genericError: "Sesuatu tidak kena — sila cuba lagi",
+      draftNotice: "Dikelaskan daripada teks yang ditampal — semak medan di bawah sebelum menyimpan.",
+    },
+    pending: {
+      banner: "{count} permainan tertampal menunggu semakan",
+      review: "Semak",
+      dismiss: "Abaikan",
     },
   },
   settings: {

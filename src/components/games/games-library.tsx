@@ -4,9 +4,9 @@ import { Fragment, useEffect, useMemo, useState, useTransition } from "react";
 import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
 import { GameForm } from "@/components/games/game-form";
 import { Spinner } from "@/components/spinner";
-import { addGame, updateGame, deleteGame } from "@/app/actions/games";
+import { addGame, updateGame, deleteGame, discardPendingGame } from "@/app/actions/games";
 import type { GameFormValues } from "@/lib/game-schema";
-import type { Game, PlayStatus } from "@/types";
+import type { Game, PendingGame, PlayStatus } from "@/types";
 import type { Dictionary } from "@/lib/dictionaries/en";
 
 const PLAY_STATUS_BADGE: Record<PlayStatus, string> = {
@@ -285,9 +285,19 @@ function GameRow({
   );
 }
 
-export function GamesLibrary({ games, dict }: { games: Game[]; dict: Dictionary["games"] }) {
+export function GamesLibrary({
+  games,
+  pendingGames,
+  dict,
+}: {
+  games: Game[];
+  pendingGames: PendingGame[];
+  dict: Dictionary["games"];
+}) {
   const [addOpen, setAddOpen] = useState(false);
   const [editingGame, setEditingGame] = useState<Game | null>(null);
+  const [reviewingDraft, setReviewingDraft] = useState<PendingGame | null>(null);
+  const [isDismissing, startDismissTransition] = useTransition();
   const [deletingId, startDeleteTransition] = useTransition();
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [sort, setSort] = useState<{ column: SortColumn; direction: SortDirection } | null>(null);
@@ -358,6 +368,24 @@ export function GamesLibrary({ games, dict }: { games: Game[]; dict: Dictionary[
     return result;
   };
 
+  // Accepting a draft is just a normal addGame — the draft only existed to
+  // pre-fill the form — followed by clearing the pending row it came from.
+  const handleAcceptDraft = async (values: GameFormValues) => {
+    if (!reviewingDraft) return { error: null };
+    const result = await addGame(toFormData(values));
+    if (!result.error) {
+      await discardPendingGame(reviewingDraft.id);
+      setReviewingDraft(null);
+    }
+    return result;
+  };
+
+  const handleDismissDraft = (id: string) => {
+    startDismissTransition(async () => {
+      await discardPendingGame(id);
+    });
+  };
+
   const handleDelete = (id: string) => {
     if (!confirm(dict.form.confirmDelete)) return;
     setPendingDeleteId(id);
@@ -369,6 +397,38 @@ export function GamesLibrary({ games, dict }: { games: Game[]; dict: Dictionary[
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-6 py-12 animate-page-in">
+      {pendingGames.length > 0 && (
+        <div className="flex flex-col gap-2 rounded-2xl border border-primary/30 bg-primary/5 p-4">
+          <p className="text-sm font-medium text-foreground">
+            {dict.pending.banner.replace("{count}", String(pendingGames.length))}
+          </p>
+          <ul className="flex flex-col gap-1.5">
+            {pendingGames.map((draft) => (
+              <li key={draft.id} className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-foreground/80">{draft.title}</span>
+                <span className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setReviewingDraft(draft)}
+                    className="cursor-pointer text-primary underline-offset-4 hover:underline"
+                  >
+                    {dict.pending.review}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isDismissing}
+                    onClick={() => handleDismissDraft(draft.id)}
+                    className="cursor-pointer text-foreground/60 underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {dict.pending.dismiss}
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold text-foreground">
@@ -517,6 +577,19 @@ export function GamesLibrary({ games, dict }: { games: Game[]; dict: Dictionary[
         <DialogContent title={dict.form.editTitle}>
           {editingGame && (
             <GameForm game={editingGame} dict={dict} onSubmit={handleEdit} onCancel={() => setEditingGame(null)} />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!reviewingDraft} onOpenChange={(open) => !open && setReviewingDraft(null)}>
+        <DialogContent title={dict.form.newTitle}>
+          {reviewingDraft && (
+            <GameForm
+              draft={reviewingDraft}
+              dict={dict}
+              onSubmit={handleAcceptDraft}
+              onCancel={() => setReviewingDraft(null)}
+            />
           )}
         </DialogContent>
       </Dialog>

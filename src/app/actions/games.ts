@@ -81,3 +81,22 @@ export async function deleteGame(id: string) {
   revalidatePath("/games");
   return { error: null };
 }
+
+// Removes a staged draft — called both when the owner dismisses it outright
+// and after accepting it (the accepted values go through addGame/toRow like
+// any other submission, this just clears the draft that prompted the modal).
+export async function discardPendingGame(id: string) {
+  const supabase = await createServerClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData?.user) {
+    return { error: "Not signed in" };
+  }
+
+  const { error } = await supabase.from("pending_games").delete().eq("id", id).eq("user_id", userData.user.id);
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/games");
+  return { error: null };
+}

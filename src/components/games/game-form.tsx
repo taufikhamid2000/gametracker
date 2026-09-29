@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { gameFormSchema, gameFormDefaults, type GameFormValues } from "@/lib/game-schema";
-import { STORES, INSTALL_STATUSES, PLAY_STATUSES, DECK_COMPAT_RATINGS, type Game } from "@/types";
+import { STORES, INSTALL_STATUSES, PLAY_STATUSES, DECK_COMPAT_RATINGS, type Game, type PendingGame } from "@/types";
 import { Spinner } from "@/components/spinner";
 import type { Dictionary } from "@/lib/dictionaries/en";
 
@@ -12,32 +12,56 @@ const FIELD_CLASS =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring";
 const LABEL_CLASS = "text-sm font-medium text-foreground/70";
 
-function toDefaults(game?: Game | null): GameFormValues {
-  if (!game) return gameFormDefaults;
-  return {
-    title: game.title,
-    store: game.store,
-    store_id: game.store_id ?? "",
-    install_status: game.install_status,
-    install_path: game.install_path ?? "",
-    play_status: game.play_status,
-    playtime_minutes: game.playtime_minutes,
-    last_played_at: game.last_played_at ? game.last_played_at.slice(0, 10) : "",
-    deck_compat: game.deck_compat,
-    rating: game.rating ?? "",
-    notes: game.notes ?? "",
-    price_amount: game.price_amount ?? "",
-    price_currency: game.price_currency ?? "",
-  };
+function toDefaults(game?: Game | null, draft?: PendingGame | null): GameFormValues {
+  if (game) {
+    return {
+      title: game.title,
+      store: game.store,
+      store_id: game.store_id ?? "",
+      install_status: game.install_status,
+      install_path: game.install_path ?? "",
+      play_status: game.play_status,
+      playtime_minutes: game.playtime_minutes,
+      last_played_at: game.last_played_at ? game.last_played_at.slice(0, 10) : "",
+      deck_compat: game.deck_compat,
+      rating: game.rating ?? "",
+      notes: game.notes ?? "",
+      price_amount: game.price_amount ?? "",
+      price_currency: game.price_currency ?? "",
+    };
+  }
+  // A staged draft never has every field classified — anything missing
+  // falls back to the normal blank-form default for that field.
+  if (draft) {
+    return {
+      ...gameFormDefaults,
+      title: draft.title,
+      store: draft.store ?? gameFormDefaults.store,
+      store_id: draft.store_id ?? "",
+      install_status: draft.install_status ?? gameFormDefaults.install_status,
+      install_path: draft.install_path ?? "",
+      play_status: draft.play_status ?? gameFormDefaults.play_status,
+      playtime_minutes: draft.playtime_minutes ?? gameFormDefaults.playtime_minutes,
+      last_played_at: draft.last_played_at ? draft.last_played_at.slice(0, 10) : "",
+      deck_compat: draft.deck_compat ?? gameFormDefaults.deck_compat,
+      rating: draft.rating ?? "",
+      notes: draft.notes ?? "",
+      price_amount: draft.price_amount ?? "",
+      price_currency: draft.price_currency ?? "",
+    };
+  }
+  return gameFormDefaults;
 }
 
 export function GameForm({
   game,
+  draft,
   dict,
   onSubmit,
   onCancel,
 }: {
   game?: Game | null;
+  draft?: PendingGame | null;
   dict: Dictionary["games"];
   onSubmit: (values: GameFormValues) => Promise<{ error: string | null }>;
   onCancel: () => void;
@@ -51,7 +75,7 @@ export function GameForm({
     formState: { errors },
   } = useForm<GameFormValues>({
     resolver: zodResolver(gameFormSchema),
-    defaultValues: toDefaults(game),
+    defaultValues: toDefaults(game, draft),
   });
 
   const submit = async (values: GameFormValues) => {
@@ -71,6 +95,12 @@ export function GameForm({
 
   return (
     <form onSubmit={handleSubmit(submit)} className="mt-4 flex flex-col gap-4">
+      {draft && (
+        <div className="rounded-lg border border-dashed border-border bg-muted/40 p-3 text-xs text-foreground/60">
+          <p className="font-medium text-foreground/70">{dict.form.draftNotice}</p>
+          {draft.source_text && <p className="mt-1 whitespace-pre-wrap">{draft.source_text}</p>}
+        </div>
+      )}
       {serverError && <p className="text-sm text-destructive">{serverError}</p>}
 
       <div className="flex flex-col gap-1.5">

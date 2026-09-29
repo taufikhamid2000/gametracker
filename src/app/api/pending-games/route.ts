@@ -5,9 +5,16 @@ import { STORES, INSTALL_STATUSES, PLAY_STATUSES, DECK_COMPAT_RATINGS } from "@/
 
 // Called by atlas's `gametracker_stage_game` MCP tool after an AI client
 // classifies pasted game text — see supabase/migrations/..._pending_games.sql.
-// Single-user app: the caller never supplies a user id, this always stages
-// the draft for the one owner account (GAMETRACKER_OWNER_USER_ID).
+// `user_id` is the caller's real auth.users id, asserted by atlas after ITS
+// own login (see atlas's app/api/oauth/authorize) — atlas and gametracker
+// share the same Supabase Auth instance (master_db), so a signed-in atlas
+// user and a gametracker user are the same person with no separate linking
+// step. GAMETRACKER_API_KEY authenticates atlas as a trusted relay; it does
+// not identify which end user a given request is for — user_id does that,
+// and the pending_games FK to auth.users rejects anything that isn't a real
+// account (not just any string atlas might send).
 const bodySchema = z.object({
+  user_id: z.string().uuid(),
   title: z.string().trim().min(1),
   store: z.enum(STORES).optional(),
   store_id: z.string().trim().optional(),
@@ -26,8 +33,7 @@ const bodySchema = z.object({
 
 export async function POST(request: Request) {
   const apiKey = process.env.GAMETRACKER_API_KEY;
-  const ownerUserId = process.env.GAMETRACKER_OWNER_USER_ID;
-  if (!apiKey || !ownerUserId) {
+  if (!apiKey) {
     return NextResponse.json({ error: "Server is not configured for staging" }, { status: 500 });
   }
 
@@ -42,14 +48,13 @@ export async function POST(request: Request) {
   }
 
   const supabase = createServiceClient();
-  const { data, error } = await supabase
-    .from("pending_games")
-    .insert({ ...parsed.data, user_id: ownerUserId })
-    .select()
-    .single();
+  const { data, error } = await supabase.from("pending_games").insert(parsed.data).select().single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // A user_id with no matching auth.users row fails the FK constraint —
+    // surface that as a normal 400 rather than a generic 500.
+    const status = error.code === "23503" ? 400 : 500;
+    return NextResponse.json({ error: error.message }, { status });
   }
 
   return NextResponse.json({ pendingGame: data });

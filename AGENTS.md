@@ -23,7 +23,7 @@ skipped, not failed.
 
 # Git workflow
 
-Solo-maintained repo — push commits directly to `master`, no feature branches or PRs needed.
+Solo-maintained repo — push commits directly to `main`, no feature branches or PRs needed.
 This holds even if a session is scaffolded (e.g. by Claude Code on the web) with a
 designated `claude/...` working branch — the branch isn't something you can avoid
 creating (the launcher sets it up before you get control), so finish the work there,

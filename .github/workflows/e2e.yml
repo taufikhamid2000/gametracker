@@ -1,7 +1,7 @@
 name: E2E smoke tests
 
 # Runs the Playwright smoke suite (e2e/smoke.spec.ts) on every push to
-# master. Public pages (/, /auth/signin, /auth/signup) always run;
+# main. Public pages (/, /auth/signin, /auth/signup) always run;
 # authenticated coverage of /dashboard activates automatically once
 # E2E_TEST_EMAIL/E2E_TEST_PASSWORD secrets exist, and skips cleanly
 # until then. Doesn't gate a deploy by itself — wire that up separately
@@ -9,7 +9,7 @@ name: E2E smoke tests
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   workflow_dispatch: {}
 
 jobs:
